@@ -1,0 +1,27 @@
+name: Flow Docker Build WA
+env:
+  GH_TOKEN: ${{secrets.GH_TOKEN}}
+on:
+  push:
+    branches: [master]
+
+jobs:
+
+  build:
+
+    runs-on: [ubuntu-20.04]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Login to YandexCloud
+      run: docker login --username oauth --password AQAAAAANT4ASAATuwTYPUzJRPUmJlefjc8B5Tfg cr.yandex
+    
+    - name: Build the Docker tag image flowwaapi
+      run: docker build . --file api.Dockerfile --tag cr.yandex/crpg8h2eiot99souipdm/flowwaapi:${GITHUB_SHA}
+    - name: Push flowwaapi to DockerHub tag
+      run: docker push cr.yandex/crpg8h2eiot99souipdm/flowwaapi:${GITHUB_SHA}
+    
+    - name: Build the Docker latest image flowwaapi
+      run: docker build . --file api.Dockerfile --tag cr.yandex/crpg8h2eiot99souipdm/flowwaapi:latest
+    - name: Push flowwaapi to DockerHub latest
+      run: docker push cr.yandex/crpg8h2eiot99souipdm/flowwaapi:latest
