@@ -20,12 +20,12 @@
     "node": ">=14.5.0"
   },
   "dependencies": {
-    "@adiwajshing/baileys": "^4.1.0",
+    "@adiwajshing/baileys": "git@github.com:adiwajshing/Baileys.git",
     "@adiwajshing/keyed-db": "^0.2.4",
-    "libsignal": "^2.0.1",
     "dotenv": "^16.0.0",
     "express": "^4.17.2",
     "express-validator": "^6.14.0",
+    "libsignal": "^2.0.1",
     "node-cleanup": "^2.1.2",
     "pino": "^7.10.0",
     "qrcode": "^1.5.0",
