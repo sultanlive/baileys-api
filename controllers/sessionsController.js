@@ -11,8 +11,9 @@ const status = (req, res) => {
     const session = getSession(res.locals.sessionId)
     let state = states[session.ws.readyState]
 
+    const isConnectedValidSession = state === 'connected' && typeof (session.isLegacy ? session.state.legacy.user : session.user) !== 'undefined'
     state =
-        state === 'connected' && typeof (session.isLegacy ? session.state.legacy.user : session.user) !== 'undefined'
+        isConnectedValidSession
             ? 'authenticated'
             : state
 
