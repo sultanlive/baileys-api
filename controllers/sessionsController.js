@@ -16,7 +16,14 @@ const status = (req, res) => {
             ? 'authenticated'
             : state
 
-    response(res, 200, true, '', { status: state })
+    let phone = null
+    if (isConnectedValidSession && session.user.id !== undefined) {
+        phone = session.user?.id.includes(':') 
+            ? session.user?.id.split(':')[0] 
+            : session.user?.id.split('@')[0]
+    }
+
+    response(res, 200, true, '', { status: state, phone })
 }
 
 const add = (req, res) => {
