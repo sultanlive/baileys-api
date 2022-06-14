@@ -11,17 +11,13 @@ const status = (req, res) => {
     const session = getSession(res.locals.sessionId)
     let state = states[session.ws.readyState]
 
-    const isConnectedValidSession = state === 'connected' && typeof (session.isLegacy ? session.state.legacy.user : session.user) !== 'undefined'
-    state =
-        isConnectedValidSession
-            ? 'authenticated'
-            : state
+    const isConnectedValidSession =
+        state === 'connected' && typeof (session.isLegacy ? session.state.legacy.user : session.user) !== 'undefined'
+    state = isConnectedValidSession ? 'authenticated' : state
 
     let phone = null
     if (isConnectedValidSession && session.user.id !== undefined) {
-        phone = session.user?.id.includes(':') 
-            ? session.user?.id.split(':')[0] 
-            : session.user?.id.split('@')[0]
+        phone = session.user?.id.includes(':') ? session.user?.id.split(':')[0] : session.user?.id.split('@')[0]
     }
 
     response(res, 200, true, '', { status: state, phone })
