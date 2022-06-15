@@ -67,6 +67,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 
 
     sessions.set(sessionId, { ...wa, isLegacy })
+    seqLogger.info({ sessionId }, `Session created. ID: ${sessionId}. StatusCode: ${200}`)
 
     wa.ev.on('creds.update', saveCreds)
 
@@ -98,10 +99,14 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         const statusCode = lastDisconnect?.error?.output?.statusCode
 
         if (connection === 'open') {
+            seqLogger.info({ sessionId }, `Session open. ID: ${sessionId}. StatusCode: ${200}`)
             retries.delete(sessionId)
         }
 
         if (connection === 'close') {
+
+            seqLogger.info({ sessionId, statusCode }, `Session closed. ID: ${sessionId}. StatusCode: ${statusCode}`)
+
             if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
                 if (res && !res.headersSent) {
                     response(res, 500, false, 'Unable to create session.')
@@ -116,6 +121,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 },
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
+
         }
 
         if (update.qr) {
@@ -153,7 +159,6 @@ const deleteSession = (sessionId, isLegacy = false) => {
         rmSync(sessionsDir(sessionId), { recursive: true, force: true })
     }
 
-    seqLogger.info({ sessionId }, `Session deleted. ID: ${sessionId}`)
     sessions.delete(sessionId)
     retries.delete(sessionId)
 }
