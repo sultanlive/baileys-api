@@ -1,18 +1,17 @@
-import { existsSync, unlinkSync, readdir, rmSync } from 'fs'
+import { existsSync, readdir, rmSync } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
-import makeWASocket, {
-    useMultiFileAuthState,
-    Browsers,
-    DisconnectReason,
-    delay,
-} from '@adiwajshing/baileys'
+import pinoToSeq from 'pino-seq'
+import makeWASocket, { useMultiFileAuthState, Browsers, DisconnectReason, delay } from '@adiwajshing/baileys'
 import { toDataURL } from 'qrcode'
 import __dirname from './dirname.js'
 import response from './response.js'
 
 const sessions = new Map()
 const retries = new Map()
+
+const stream = pinoToSeq.createStream({ serverUrl: process.env.SEQ_URL, apiKey: process.env.SEQ_API_KEY })
+const seqLogger = pino({ name: 'pino-seq' }, stream)
 
 const sessionsDir = (sessionId = '') => {
     return join(__dirname, 'sessions_multi/', sessionId ? `${sessionId}/` : '')
@@ -154,6 +153,7 @@ const deleteSession = (sessionId, isLegacy = false) => {
         rmSync(sessionsDir(sessionId), { recursive: true, force: true })
     }
 
+    seqLogger.info({ sessionId }, `Session deleted. ID: ${sessionId}`)
     sessions.delete(sessionId)
     retries.delete(sessionId)
 }

@@ -29,6 +29,7 @@
     "libsignal": "^2.0.1",
     "node-cleanup": "^2.1.2",
     "pino": "^7.10.0",
+    "pino-seq": "^0.9.0",
     "qrcode": "^1.5.0",
     "qrcode-terminal": "^0.12.0"
   },
