@@ -3,6 +3,12 @@ import express from 'express'
 import nodeCleanup from 'node-cleanup'
 import routes from './routes.js'
 import { init, cleanup } from './whatsapp.js'
+import seqLogger from './utils/seqLogger.js'
+
+process.on('uncaughtException', (error) => {
+    const { message, stack } = error
+    seqLogger.fatal({ message, stack }, `API. Uncaught Error: ${message}`)
+})
 
 const app = express()
 const host = process.env.HOST ?? '127.0.0.1'
