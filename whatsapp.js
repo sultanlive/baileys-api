@@ -1,7 +1,7 @@
 import { existsSync, readdir, rmSync } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
-import pinoToSeq from 'pino-seq'
+import seqLogger from './utils/seqLogger.js'
 import makeWASocket, { useMultiFileAuthState, Browsers, DisconnectReason, delay } from '@adiwajshing/baileys'
 import { toDataURL } from 'qrcode'
 import __dirname from './dirname.js'
@@ -10,15 +10,14 @@ import response from './response.js'
 const sessions = new Map()
 const retries = new Map()
 
-const stream = pinoToSeq.createStream({ serverUrl: process.env.SEQ_URL, apiKey: process.env.SEQ_API_KEY })
-const seqLogger = pino({ name: 'pino-seq' }, stream)
-
 const sessionsDir = (sessionId = '') => {
     return join(__dirname, 'sessions_multi/', sessionId ? `${sessionId}/` : '')
 }
+
 const isSessionDirectoryExists = (sessionId) => {
     return existsSync(sessionsDir(sessionId))
 }
+
 const isSessionExists = (sessionId) => {
     return sessions.has(sessionId)
 }
@@ -67,7 +66,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 
 
     sessions.set(sessionId, { ...wa, isLegacy })
-    seqLogger.info({ sessionId }, `Session created. ID: ${sessionId}. StatusCode: ${200}`)
+    seqLogger.info({ sessionId }, `API. Session created. ID: ${sessionId}. StatusCode: ${200}`)
 
     wa.ev.on('creds.update', saveCreds)
 
@@ -99,13 +98,13 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         const statusCode = lastDisconnect?.error?.output?.statusCode
 
         if (connection === 'open') {
-            seqLogger.info({ sessionId }, `Session open. ID: ${sessionId}. StatusCode: ${200}`)
+            seqLogger.info({ sessionId }, `API. Session open. ID: ${sessionId}. StatusCode: ${200}`)
             retries.delete(sessionId)
         }
 
         if (connection === 'close') {
 
-            seqLogger.info({ sessionId, statusCode }, `Session closed. ID: ${sessionId}. StatusCode: ${statusCode}`)
+            seqLogger.info({ sessionId, statusCode }, `API. Session closed. ID: ${sessionId}. StatusCode: ${statusCode}`)
 
             if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
                 if (res && !res.headersSent) {
