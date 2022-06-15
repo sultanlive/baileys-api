@@ -10,6 +10,8 @@ router.get('/find/:id', sessionValidator, controller.find)
 
 router.get('/status/:id', sessionValidator, controller.status)
 
+router.get('/allstatus', requestValidator, controller.allStatus)
+
 router.post('/add', body('id').notEmpty(), body('isLegacy').notEmpty(), requestValidator, controller.add)
 
 router.delete('/delete/:id', sessionValidator, controller.del)

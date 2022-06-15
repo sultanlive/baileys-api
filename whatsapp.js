@@ -154,6 +154,10 @@ const getSession = (sessionId) => {
     return sessions.get(sessionId) ?? null
 }
 
+const getSessions = () => {
+    return sessions;
+}
+
 const deleteSession = (sessionId, isLegacy = false) => {
     if (isSessionDirectoryExists(sessionId)) {
         rmSync(sessionsDir(sessionId), { recursive: true, force: true })
@@ -265,4 +269,5 @@ export {
     formatGroup,
     cleanup,
     init,
+    getSessions
 }
