@@ -1,10 +1,8 @@
-import { existsSync, unlinkSync, readdir } from 'fs'
+import { existsSync, unlinkSync, readdir, rmSync } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
 import makeWASocket, {
-    makeWALegacySocket,
-    useSingleFileAuthState,
-    useSingleFileLegacyAuthState,
+    useMultiFileAuthState,
     Browsers,
     DisconnectReason,
     delay,
@@ -17,15 +15,13 @@ const sessions = new Map()
 const retries = new Map()
 
 const sessionsDir = (sessionId = '') => {
-    return join(__dirname, 'sessions', sessionId ? `${sessionId}.json` : '')
+    return join(__dirname, 'sessions_multi/', sessionId ? `${sessionId}/` : '')
 }
-
+const isSessionDirectoryExists = (sessionId) => {
+    return existsSync(sessionsDir(sessionId))
+}
 const isSessionExists = (sessionId) => {
     return sessions.has(sessionId)
-}
-
-const isSessionFileExists = (name) => {
-    return existsSync(sessionsDir(name))
 }
 
 const shouldReconnect = (sessionId) => {
@@ -47,13 +43,9 @@ const shouldReconnect = (sessionId) => {
 }
 
 const createSession = async (sessionId, isLegacy = false, res = null) => {
-    const sessionFile = (isLegacy ? 'legacy_' : 'md_') + sessionId
-
     const logger = pino({ level: 'warn' })
 
-    const { state, saveState } = isLegacy
-        ? useSingleFileLegacyAuthState(sessionsDir(sessionFile))
-        : useSingleFileAuthState(sessionsDir(sessionFile))
+    const { state, saveCreds } = await useMultiFileAuthState(sessionsDir(sessionId))
 
     /**
      * @type {import('@adiwajshing/baileys').CommonSocketConfig}
@@ -68,16 +60,16 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     /**
      * @type {import('@adiwajshing/baileys').AnyWASocket}
      */
-    const wa = isLegacy ? makeWALegacySocket(waConfig) : makeWASocket.default(waConfig)
+    const wa = makeWASocket.default(waConfig)
 
-    if (!isLegacy) {
-        //store.readFromFile(sessionsDir(`${sessionId}_store`))
-        //store.bind(wa.ev)
-    }
+
+    //store.readFromFile(sessionsDir(`${sessionId}_store`))
+    //store.bind(wa.ev)
+
 
     sessions.set(sessionId, { ...wa, isLegacy })
 
-    wa.ev.on('creds.update', saveState)
+    wa.ev.on('creds.update', saveCreds)
 
     // wa.ev.on('chats.set', ({ chats }) => {
     //     if (isLegacy) {
@@ -158,15 +150,8 @@ const getSession = (sessionId) => {
 }
 
 const deleteSession = (sessionId, isLegacy = false) => {
-    const sessionFile = (isLegacy ? 'legacy_' : 'md_') + sessionId
-    const storeFile = `${sessionId}_store`
-
-    if (isSessionFileExists(sessionFile)) {
-        unlinkSync(sessionsDir(sessionFile))
-    }
-
-    if (isSessionFileExists(storeFile)) {
-        unlinkSync(sessionsDir(storeFile))
+    if (isSessionDirectoryExists(sessionId)) {
+        rmSync(sessionsDir(sessionId), { recursive: true, force: true })
     }
 
     sessions.delete(sessionId)
@@ -197,7 +182,7 @@ const isExists = async (session, jid, isGroup = false) => {
         if (session.isLegacy) {
             result = await session.onWhatsApp(jid)
         } else {
-            ;[result] = await session.onWhatsApp(jid)
+            [result] = await session.onWhatsApp(jid)
         }
 
         return result.exists
@@ -250,25 +235,15 @@ const cleanup = () => {
 }
 
 const init = () => {
-    readdir(sessionsDir(), (err, files) => {
+    readdir(sessionsDir(), (err, directories) => {
         if (err) {
             throw err
         }
 
-        for (const file of files) {
-            if (
-                !file.endsWith('.json') ||
-                (!file.startsWith('md_') && !file.startsWith('legacy_')) ||
-                file.includes('_store')
-            ) {
-                continue
+        for (const directoryName of directories) {
+            if (!directoryName.includes('.')) {
+                createSession(directoryName, false)
             }
-
-            const filename = file.replace('.json', '')
-            const isLegacy = filename.split('_', 1)[0] !== 'md'
-            const sessionId = filename.substring(isLegacy ? 7 : 3)
-
-            createSession(sessionId, isLegacy)
         }
     })
 }
