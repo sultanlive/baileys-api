@@ -51,7 +51,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
      */
     const waConfig = {
         auth: state,
-        printQRInTerminal: true,
+        printQRInTerminal: process.env.PRINT_TERMINAL === "true",
         logger,
         browser: Browsers.ubuntu('Chrome'),
     }
