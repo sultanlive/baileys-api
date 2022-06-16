@@ -50,7 +50,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
      */
     const waConfig = {
         auth: state,
-        printQRInTerminal: process.env.PRINT_TERMINAL === "true",
+        printQRInTerminal: process.env.PRINT_TERMINAL === 'true',
         logger,
         browser: Browsers.ubuntu('Chrome'),
     }
@@ -60,10 +60,8 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
      */
     const wa = makeWASocket.default(waConfig)
 
-
     //store.readFromFile(sessionsDir(`${sessionId}_store`))
     //store.bind(wa.ev)
-
 
     sessions.set(sessionId, { ...wa, isLegacy })
     seqLogger.info({ sessionId }, `API. Session created. ID: ${sessionId}. StatusCode: ${200}`)
@@ -103,8 +101,10 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         }
 
         if (connection === 'close') {
-
-            seqLogger.info({ sessionId, statusCode }, `API. Session closed. ID: ${sessionId}. StatusCode: ${statusCode}`)
+            seqLogger.info(
+                { sessionId, statusCode },
+                `API. Session closed. ID: ${sessionId}. StatusCode: ${statusCode}`
+            )
 
             if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
                 if (res && !res.headersSent) {
@@ -120,7 +120,6 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 },
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
-
         }
 
         if (update.qr) {
@@ -154,7 +153,7 @@ const getSession = (sessionId) => {
 }
 
 const getSessions = () => {
-    return sessions;
+    return sessions
 }
 
 const deleteSession = (sessionId, isLegacy = false) => {
@@ -190,7 +189,7 @@ const isExists = async (session, jid, isGroup = false) => {
         if (session.isLegacy) {
             result = await session.onWhatsApp(jid)
         } else {
-            [result] = await session.onWhatsApp(jid)
+            ;[result] = await session.onWhatsApp(jid)
         }
 
         return result.exists
@@ -206,7 +205,7 @@ const sendMessage = async (session, receiver, message) => {
     try {
         await delay(1000)
 
-        return session.sendMessage(receiver, message)
+        return session.sendMessage(receiver, message, { detectLinks: false })
     } catch {
         return Promise.reject(null) // eslint-disable-line prefer-promise-reject-errors
     }
@@ -268,5 +267,5 @@ export {
     formatGroup,
     cleanup,
     init,
-    getSessions
+    getSessions,
 }

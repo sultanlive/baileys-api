@@ -19,6 +19,17 @@ process.on('beforeExit', (code) => {
     seqLogger.warn({ code }, `API. Server exit with code ${code}. PID: ${process.pid}`)
 })
 
+process.on('unhandledRejection', (reason, promise) => {
+    seqLogger.fatal(
+        { reason, promise },
+        `API. Unhandled Rejection at ${promise}, reason: ${reason}. PID: ${process.pid}`
+    )
+})
+
+process.on('warning', (warning) => {
+    seqLogger.warn({ warning }, `API. Server warning - ${warning.message}. PID: ${process.pid}`)
+})
+
 const ONE_MINUTE = 1000 * 60
 
 setInterval(() => {
