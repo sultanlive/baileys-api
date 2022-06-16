@@ -16,4 +16,4 @@ RUN npm install
 COPY . .
 
 EXPOSE 8888
-CMD [ "node", "." ]
+CMD [ "node", "app.js --max-old-space-size=8000" ]
