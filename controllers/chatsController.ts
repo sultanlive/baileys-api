@@ -1,11 +1,12 @@
-import { getSession, getChatList, isExists, sendMessage, formatPhone } from './../whatsapp.js'
-import response from './../response.js'
+import { Request, Response } from 'express'
+import { getSession, getChatList, isExists, sendMessage, formatPhone } from '../core/whatsapp.js'
+import response from '../utils/response.js'
 
-const getList = (req, res) => {
+const getList = (_: Request, res: Response) => {
     return response(res, 200, true, '', getChatList(res.locals.sessionId))
 }
 
-const send = async (req, res) => {
+const send = async (req: Request, res: Response) => {
     const session = getSession(res.locals.sessionId)
     const receiver = formatPhone(req.body.receiver)
     const { message } = req.body
@@ -25,7 +26,7 @@ const send = async (req, res) => {
     }
 }
 
-const sendBulk = async (req, res) => {
+const sendBulk = async (req: Request, res: Response) => {
     const session = getSession(res.locals.sessionId)
     const errors = []
 

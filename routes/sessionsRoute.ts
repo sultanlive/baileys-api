@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { body } from 'express-validator'
-import requestValidator from './../middlewares/requestValidator.js'
-import sessionValidator from './../middlewares/sessionValidator.js'
-import * as controller from './../controllers/sessionsController.js'
+import requestValidator from '../middlewares/requestValidator'
+import sessionValidator from '../middlewares/sessionValidator'
+import * as controller from '../controllers/sessionsController'
 
 const router = Router()
 

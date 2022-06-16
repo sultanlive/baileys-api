@@ -1,11 +1,12 @@
-import { isSessionExists, createSession, getSession, deleteSession, getSessions } from './../whatsapp.js'
-import response from './../response.js'
+import { Request, Response } from 'express'
+import { isSessionExists, createSession, getSession, deleteSession, getSessions } from '../core/whatsapp'
+import response from '../utils/response'
 
-const find = (req, res) => {
+const find = (_: Request, res: Response) => {
     response(res, 200, true, 'Session found.')
 }
 
-const status = (req, res) => {
+const status = (_: Request, res: Response) => {
     const states = ['connecting', 'connected', 'disconnecting', 'disconnected']
 
     const session = getSession(res.locals.sessionId)
@@ -23,16 +24,23 @@ const status = (req, res) => {
     response(res, 200, true, '', { status: state, phone })
 }
 
-const allStatus = (req, res) => {
+interface SessionResponse {
+    id: string
+    state: string
+    phone: string
+}
+
+const allStatus = (_: Request, res: Response) => {
     const states = ['connecting', 'connected', 'disconnecting', 'disconnected']
     const allSessions = getSessions()
-    let sessions = []
+    const sessions: SessionResponse[] = []
 
     allSessions.forEach((session, key) => {
         let state = states[session.ws.readyState]
 
         const isConnectedValidSession =
-            state === 'connected' && typeof (session.isLegacy ? session.state.legacy.user : session.user) !== 'undefined'
+            state === 'connected' &&
+            typeof (session.isLegacy ? session.state.legacy.user : session.user) !== 'undefined'
         state = isConnectedValidSession ? 'authenticated' : state
 
         let phone = null
@@ -43,15 +51,14 @@ const allStatus = (req, res) => {
         sessions.push({
             id: key,
             state,
-            phone
+            phone,
         })
-    });
-
+    })
 
     response(res, 200, true, '', sessions)
 }
 
-const add = (req, res) => {
+const add = (req: Request, res: Response) => {
     const { id, isLegacy } = req.body
 
     if (isSessionExists(id)) {
@@ -61,7 +68,7 @@ const add = (req, res) => {
     createSession(id, isLegacy === 'true', res)
 }
 
-const del = async (req, res) => {
+const del = async (req: Request, res: Response) => {
     const { id } = req.params
     const session = getSession(id)
 

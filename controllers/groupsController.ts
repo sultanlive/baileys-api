@@ -1,11 +1,12 @@
-import { getSession, getChatList, isExists, sendMessage, formatGroup } from './../whatsapp.js'
-import response from './../response.js'
+import { Request, Response } from 'express'
+import { getSession, getChatList, isExists, sendMessage, formatGroup } from '../core/whatsapp.js'
+import response from '../utils/response.js'
 
-const getList = (req, res) => {
+const getList = (_: Request, res: Response) => {
     return response(res, 200, true, '', getChatList(res.locals.sessionId, true))
 }
 
-const getGroupMetaData = async (req, res) => {
+const getGroupMetaData = async (req: Request, res: Response) => {
     const session = getSession(res.locals.sessionId)
     const { jid } = req.params
 
@@ -22,7 +23,7 @@ const getGroupMetaData = async (req, res) => {
     }
 }
 
-const send = async (req, res) => {
+const send = async (req: Request, res: Response) => {
     const session = getSession(res.locals.sessionId)
     const receiver = formatGroup(req.body.receiver)
     const { message } = req.body

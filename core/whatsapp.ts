@@ -1,29 +1,41 @@
+/* eslint-disable capitalized-comments */
 import { existsSync, readdir, rmSync } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
-import seqLogger from './utils/seqLogger.js'
-import makeWASocket, { useMultiFileAuthState, Browsers, DisconnectReason, delay } from '@adiwajshing/baileys'
+import seqLogger from '../utils/seqLogger'
+import makeWASocket, {
+    useMultiFileAuthState,
+    Browsers,
+    DisconnectReason,
+    delay,
+    WASocket,
+    UserFacingSocketConfig,
+    AnyMessageContent,
+    GroupMetadata,
+} from '@adiwajshing/baileys'
 import { toDataURL } from 'qrcode'
-import __dirname from './dirname.js'
-import response from './response.js'
+import __dirname from '../utils/dirname'
+import response from '../utils/response'
+import { SessionMap } from '../types'
+import { Response } from 'express'
 
-const sessions = new Map()
+const sessions: Map<string, SessionMap> = new Map()
 const retries = new Map()
 
 const sessionsDir = (sessionId = '') => {
     return join(__dirname, 'sessions_multi/', sessionId ? `${sessionId}/` : '')
 }
 
-const isSessionDirectoryExists = (sessionId) => {
+const isSessionDirectoryExists = (sessionId: string) => {
     return existsSync(sessionsDir(sessionId))
 }
 
-const isSessionExists = (sessionId) => {
+const isSessionExists = (sessionId: string) => {
     return sessions.has(sessionId)
 }
 
-const shouldReconnect = (sessionId) => {
-    let maxRetries = parseInt(process.env.MAX_RETRIES ?? 0)
+const shouldReconnect = (sessionId: string) => {
+    let maxRetries = parseInt(process.env.MAX_RETRIES ?? '0') ?? 0
     let attempts = retries.get(sessionId) ?? 0
 
     maxRetries = maxRetries < 1 ? 1 : maxRetries
@@ -40,7 +52,7 @@ const shouldReconnect = (sessionId) => {
     return false
 }
 
-const createSession = async (sessionId, isLegacy = false, res = null) => {
+const createSession = async (sessionId: string, isLegacy = false, res: Response | null = null) => {
     const logger = pino({ level: 'warn' })
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionsDir(sessionId))
@@ -48,9 +60,9 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     /**
      * @type {import('@adiwajshing/baileys').CommonSocketConfig}
      */
-    const waConfig = {
+    const waConfig: UserFacingSocketConfig = {
         auth: state,
-        printQRInTerminal: process.env.PRINT_TERMINAL === "true",
+        printQRInTerminal: process.env.PRINT_TERMINAL === 'true',
         logger,
         browser: Browsers.ubuntu('Chrome'),
     }
@@ -58,19 +70,17 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     /**
      * @type {import('@adiwajshing/baileys').AnyWASocket}
      */
-    const wa = makeWASocket.default(waConfig)
+    const wa: WASocket = makeWASocket(waConfig)
 
-
-    //store.readFromFile(sessionsDir(`${sessionId}_store`))
-    //store.bind(wa.ev)
-
+    // Store.readFromFile(sessionsDir(`${sessionId}_store`))
+    // store.bind(wa.ev)
 
     sessions.set(sessionId, { ...wa, isLegacy })
     seqLogger.info({ sessionId }, `API. Session created. ID: ${sessionId}. StatusCode: ${200}`)
 
     wa.ev.on('creds.update', saveCreds)
 
-    // wa.ev.on('chats.set', ({ chats }) => {
+    // Wa.ev.on('chats.set', ({ chats }) => {
     //     if (isLegacy) {
     //         store.chats.insertIfAbsent(...chats)
     //     }
@@ -93,9 +103,21 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     })
     */
 
+    interface ErrorOutput extends Error {
+        output?: {
+            statusCode: number
+        }
+    }
+
+    interface LastDisconnect {
+        error: ErrorOutput
+        date: Date
+    }
+
     wa.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update
-        const statusCode = lastDisconnect?.error?.output?.statusCode
+        const last: LastDisconnect = lastDisconnect
+        const statusCode: number = last?.error?.output?.statusCode
 
         if (connection === 'open') {
             seqLogger.info({ sessionId }, `API. Session open. ID: ${sessionId}. StatusCode: ${200}`)
@@ -103,8 +125,10 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         }
 
         if (connection === 'close') {
-
-            seqLogger.info({ sessionId, statusCode }, `API. Session closed. ID: ${sessionId}. StatusCode: ${statusCode}`)
+            seqLogger.info(
+                { sessionId, statusCode },
+                `API. Session closed. ID: ${sessionId}. StatusCode: ${statusCode}`
+            )
 
             if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
                 if (res && !res.headersSent) {
@@ -118,15 +142,17 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 () => {
                     createSession(sessionId, isLegacy, res)
                 },
-                statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
+                statusCode === DisconnectReason.restartRequired
+                    ? 0
+                    : parseInt(process.env.RECONNECT_INTERVAL ?? '0') ?? 0
             )
-
         }
 
         if (update.qr) {
             if (res && !res.headersSent) {
                 try {
                     const qr = await toDataURL(update.qr)
+                    console.log(typeof qr)
 
                     response(res, 200, true, 'QR code received, please scan the QR code.', { qr })
 
@@ -149,24 +175,32 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 /**
  * @returns {(import('@adiwajshing/baileys').AnyWASocket|null)}
  */
-const getSession = (sessionId) => {
+const getSession = (sessionId: string) => {
     return sessions.get(sessionId) ?? null
 }
 
 const getSessions = () => {
-    return sessions;
+    return sessions
 }
 
-const deleteSession = (sessionId, isLegacy = false) => {
+const deleteSession = (sessionId: string, isLegacy = false) => {
     if (isSessionDirectoryExists(sessionId)) {
         rmSync(sessionsDir(sessionId), { recursive: true, force: true })
+    }
+
+    if (isLegacy) {
+        console.log('legacy')
     }
 
     sessions.delete(sessionId)
     retries.delete(sessionId)
 }
 
-const getChatList = (sessionId, isGroup = false) => {
+/**
+ * @description Method is not working, store disabled
+ */
+
+const getChatList = (sessionId: string, isGroup = false) => {
     const filter = isGroup ? '@g.us' : '@s.whatsapp.net'
 
     return getSession(sessionId).store.chats.filter((chat) => {
@@ -177,9 +211,14 @@ const getChatList = (sessionId, isGroup = false) => {
 /**
  * @param {import('@adiwajshing/baileys').AnyWASocket} session
  */
-const isExists = async (session, jid, isGroup = false) => {
+const isExists = async (session: SessionMap, jid: string, isGroup = false): Promise<boolean> => {
     try {
-        let result
+        interface PhoneMetadata {
+            exists: boolean
+            jid?: string
+            id?: number | null
+        }
+        let result: PhoneMetadata | GroupMetadata = { exists: false, id: null }
 
         if (isGroup) {
             result = await session.groupMetadata(jid)
@@ -188,9 +227,9 @@ const isExists = async (session, jid, isGroup = false) => {
         }
 
         if (session.isLegacy) {
-            result = await session.onWhatsApp(jid)
+            ;[result] = await session.onWhatsApp(jid)
         } else {
-            [result] = await session.onWhatsApp(jid)
+            ;[result] = await session.onWhatsApp(jid)
         }
 
         return result.exists
@@ -202,7 +241,7 @@ const isExists = async (session, jid, isGroup = false) => {
 /**
  * @param {import('@adiwajshing/baileys').AnyWASocket} session
  */
-const sendMessage = async (session, receiver, message) => {
+const sendMessage = async (session: SessionMap, receiver: string, message: AnyMessageContent) => {
     try {
         await delay(1000)
 
@@ -212,7 +251,7 @@ const sendMessage = async (session, receiver, message) => {
     }
 }
 
-const formatPhone = (phone) => {
+const formatPhone = (phone: string) => {
     if (phone.endsWith('@s.whatsapp.net')) {
         return phone
     }
@@ -222,7 +261,7 @@ const formatPhone = (phone) => {
     return (formatted += '@s.whatsapp.net')
 }
 
-const formatGroup = (group) => {
+const formatGroup = (group: string) => {
     if (group.endsWith('@g.us')) {
         return group
     }
@@ -235,11 +274,11 @@ const formatGroup = (group) => {
 const cleanup = () => {
     console.log('Running cleanup before exit.')
 
-    sessions.forEach((session, sessionId) => {
-        if (!session.isLegacy) {
-            //session.store.writeToFile(sessionsDir(`${sessionId}_store`))
-        }
-    })
+    // sessions.forEach((session, sessionId) => {
+    //     if (!session.isLegacy) {
+    //         Session.store.writeToFile(sessionsDir(`${sessionId}_store`))
+    //     }
+    // })
 }
 
 const init = () => {
@@ -268,5 +307,5 @@ export {
     formatGroup,
     cleanup,
     init,
-    getSessions
+    getSessions,
 }
