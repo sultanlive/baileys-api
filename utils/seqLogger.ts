@@ -1,4 +1,4 @@
-import * as pinoToSeq from 'pino-seq'
+import pinoToSeq from 'pino-seq'
 import pino from 'pino'
 
 const stream = pinoToSeq.createStream({ serverUrl: process.env.SEQ_URL, apiKey: process.env.SEQ_API_KEY })

@@ -1,6 +1,6 @@
-import { isSessionExists } from '../core/whatsapp'
 import { NextFunction, Request, Response } from 'express'
-import response from '../utils/response'
+import { isSessionExists } from '../core/whatsapp.js'
+import response from '../utils/response.js'
 
 const validate = (req: Request, res: Response, next: NextFunction) => {
     const sessionId = String(req.query.id ?? req.params.id)

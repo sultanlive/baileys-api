@@ -1,8 +1,9 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable capitalized-comments */
 import { existsSync, readdir, rmSync } from 'fs'
 import { join } from 'path'
 import pino from 'pino'
-import seqLogger from '../utils/seqLogger'
+import seqLogger from '../utils/seqLogger.js'
 import makeWASocket, {
     useMultiFileAuthState,
     Browsers,
@@ -14,16 +15,16 @@ import makeWASocket, {
     GroupMetadata,
 } from '@adiwajshing/baileys'
 import { toDataURL } from 'qrcode'
-import __dirname from '../utils/dirname'
-import response from '../utils/response'
+import __dirname from '../utils/dirname.js'
+import response from '../utils/response.js'
 import { SessionMap } from '../types'
 import { Response } from 'express'
 
 const sessions: Map<string, SessionMap> = new Map()
 const retries = new Map()
 
-const sessionsDir = (sessionId = '') => {
-    return join(__dirname, 'sessions_multi/', sessionId ? `${sessionId}/` : '')
+const sessionsDir = (sessionId?: string) => {
+    return join(__dirname, 'sessions_multi', sessionId ? `${sessionId}` : '')
 }
 
 const isSessionDirectoryExists = (sessionId: string) => {
@@ -70,7 +71,10 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
     /**
      * @type {import('@adiwajshing/baileys').AnyWASocket}
      */
-    const wa: WASocket = makeWASocket(waConfig)
+    
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore: Property 'default' does not exist on type
+    const wa: WASocket = makeWASocket.default(waConfig)
 
     // Store.readFromFile(sessionsDir(`${sessionId}_store`))
     // store.bind(wa.ev)
@@ -116,8 +120,8 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
 
     wa.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update
-        const last: LastDisconnect = lastDisconnect
-        const statusCode: number = last?.error?.output?.statusCode
+        const last: LastDisconnect | undefined = lastDisconnect
+        const statusCode: number | undefined = last?.error?.output?.statusCode
 
         if (connection === 'open') {
             seqLogger.info({ sessionId }, `API. Session open. ID: ${sessionId}. StatusCode: ${200}`)
@@ -203,7 +207,11 @@ const deleteSession = (sessionId: string, isLegacy = false) => {
 const getChatList = (sessionId: string, isGroup = false) => {
     const filter = isGroup ? '@g.us' : '@s.whatsapp.net'
 
-    return getSession(sessionId).store.chats.filter((chat) => {
+    if (sessionId === null) {
+        return []
+    }
+
+    return getSession(sessionId)?.store?.chats.filter((chat) => {
         return chat.id.endsWith(filter)
     })
 }
@@ -227,9 +235,9 @@ const isExists = async (session: SessionMap, jid: string, isGroup = false): Prom
         }
 
         if (session.isLegacy) {
-            ;[result] = await session.onWhatsApp(jid)
+            [result] = await session.onWhatsApp(jid)
         } else {
-            ;[result] = await session.onWhatsApp(jid)
+            [result] = await session.onWhatsApp(jid)
         }
 
         return result.exists

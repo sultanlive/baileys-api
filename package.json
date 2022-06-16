@@ -1,13 +1,14 @@
 {
-  "name": "baileys-api",
+  "name": "internal-api",
   "description": "Simple RESTful WhatsApp API",
   "private": true,
-  "main": "app.ts",
   "type": "module",
+  "main": "app.ts",
   "scripts": {
-    "start": "node .",
-    "start:dev": "node --loader ts-node/esm ./app.ts",
-    "dev": "nodemon ."
+    "start": "node ./build/app.js",
+    "build": "tsc",
+    "start:dev": "node --loader ts-node/esm app.ts",
+    "dev": "nodemon"
   },
   "repository": {
     "type": "git",

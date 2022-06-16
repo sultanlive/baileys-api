@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { body } from 'express-validator'
-import requestValidator from '../middlewares/requestValidator'
-import sessionValidator from '../middlewares/sessionValidator'
-import * as controller from '../controllers/sessionsController'
+import requestValidator from '../middlewares/requestValidator.js'
+import sessionValidator from '../middlewares/sessionValidator.js'
+import * as controller from '../controllers/sessionsController.js'
 
 const router = Router()
 
@@ -10,7 +10,7 @@ router.get('/find/:id', sessionValidator, controller.find)
 
 router.get('/status/:id', sessionValidator, controller.status)
 
-router.get('/allstatus', requestValidator, controller.allStatus)
+router.get('/status', requestValidator, controller.allStatus)
 
 router.post('/add', body('id').notEmpty(), body('isLegacy').notEmpty(), requestValidator, controller.add)
 

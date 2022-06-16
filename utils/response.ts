@@ -5,7 +5,7 @@ const response = (res: Response, statusCode = 200, success = false, message = ''
     res.json({
         success,
         message,
-        data,
+        data
     })
 
     res.end()

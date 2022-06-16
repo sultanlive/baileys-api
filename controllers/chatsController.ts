@@ -11,6 +11,10 @@ const send = async (req: Request, res: Response) => {
     const receiver = formatPhone(req.body.receiver)
     const { message } = req.body
 
+    if (session === null) {
+        return response(res, 400, false, 'The session not exists.')
+    }
+
     try {
         const exists = await isExists(session, receiver)
 
@@ -29,6 +33,10 @@ const send = async (req: Request, res: Response) => {
 const sendBulk = async (req: Request, res: Response) => {
     const session = getSession(res.locals.sessionId)
     const errors = []
+
+    if (session === null) {
+        return response(res, 400, false, 'The session not exists.')
+    }
 
     for (const [key, data] of req.body.entries()) {
         if (!data.receiver || !data.message) {
