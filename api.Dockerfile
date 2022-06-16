@@ -1,4 +1,4 @@
-FROM node:16
+FROM node:18
 
 # создание директории приложения
 WORKDIR /usr/src/app
@@ -16,4 +16,4 @@ RUN npm install
 COPY . .
 
 EXPOSE 8888
-CMD [ "node", "." , "--max-old-space-size=8000" ]
+CMD [ "node", "." ]
