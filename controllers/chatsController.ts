@@ -22,11 +22,15 @@ const send = async (req: Request, res: Response) => {
             return response(res, 400, false, 'The receiver number is not exists.')
         }
 
+        await session.sendPresenceUpdate('available')
+
         await sendMessage(session, receiver, message)
 
         response(res, 200, true, 'The message has been successfully sent.')
     } catch {
         response(res, 500, false, 'Failed to send the message.')
+    } finally {
+        await session.sendPresenceUpdate('unavailable')
     }
 }
 
