@@ -30,7 +30,7 @@ const send = async (req: Request, res: Response) => {
     } catch {
         response(res, 500, false, 'Failed to send the message.')
     } finally {
-        await session.sendPresenceUpdate('unavailable')
+        session.sendPresenceUpdate('unavailable')
     }
 }
 

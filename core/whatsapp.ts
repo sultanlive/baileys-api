@@ -124,8 +124,9 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
         const statusCode: number | undefined = last?.error?.output?.statusCode
 
         if (connection === 'open') {
-            seqLogger.info({ sessionId }, `API. Session open. ID: ${sessionId}. StatusCode: ${200}`)
             retries.delete(sessionId)
+            const session = getSession(sessionId)
+            session.sendPresenceUpdate('unavailable')
         }
 
         if (connection === 'close') {
@@ -156,7 +157,6 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
             if (res && !res.headersSent) {
                 try {
                     const qr = await toDataURL(update.qr)
-                    console.log(typeof qr)
 
                     response(res, 200, true, 'QR code received, please scan the QR code.', { qr })
 
