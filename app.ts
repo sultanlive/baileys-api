@@ -4,11 +4,9 @@ import nodeCleanup from 'node-cleanup'
 import routes from './routes/routes.js'
 import { init, cleanup } from './core/whatsapp.js'
 import seqLogger from './utils/seqLogger.js'
+import serverStats from './utils/serverStats.js'
 
-process.on('uncaughtException', (error) => {
-    const { message, stack } = error
-    seqLogger.fatal({ message, stack }, `API. Uncaught Error: ${message}`)
-})
+serverStats()
 
 const app = express()
 const host = process.env.HOST ?? '127.0.0.1'
@@ -22,8 +20,11 @@ app.use('/', routes)
 
 app.listen(port, () => {
     init()
+    seqLogger.info(
+        { port, version: process.version, v8: process.versions.v8, platform: process.platform },
+        `API. Server started. PID: ${process.pid}`
+    )
     console.log(`Server is listening on http://${host}:${port}`)
-    seqLogger.info({ port }, `API. Server start: PORT:${port}`)
 })
 
 nodeCleanup(cleanup)
