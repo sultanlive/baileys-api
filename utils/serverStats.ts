@@ -1,4 +1,4 @@
-import seqLogger from './seqLogger'
+import seqLogger from './seqLogger.js'
 
 const serverStats = () => {
     process.on('uncaughtException', (error) => {
