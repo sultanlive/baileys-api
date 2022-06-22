@@ -19,6 +19,7 @@ import __dirname from '../utils/dirname.js'
 import response from '../utils/response.js'
 import { SessionMap } from '../types'
 import { Response } from 'express'
+import { MessageRetryHandler } from '../controllers/messageController.js'
 
 const sessions: Map<string, SessionMap> = new Map()
 const retries = new Map()
@@ -58,6 +59,7 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
 
     const { state, saveCreds } = await useMultiFileAuthState(sessionsDir(sessionId))
 
+    const handler = new MessageRetryHandler();
     /**
      * @type {import('@adiwajshing/baileys').CommonSocketConfig}
      */
@@ -65,6 +67,7 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
         auth: state,
         printQRInTerminal: process.env.PRINT_TERMINAL === 'true',
         logger,
+        getMessage: handler.messageRetryHandler,
         browser: Browsers.ubuntu('Chrome'),
     }
 
@@ -79,7 +82,7 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
     // Store.readFromFile(sessionsDir(`${sessionId}_store`))
     // store.bind(wa.ev)
 
-    sessions.set(sessionId, { ...wa, isLegacy })
+    sessions.set(sessionId, { ...wa, isLegacy, handler })
     seqLogger.info({ sessionId }, `API. Session created. ID: ${sessionId}. StatusCode: ${200}`)
 
     wa.ev.on('creds.update', saveCreds)
@@ -126,7 +129,7 @@ const createSession = async (sessionId: string, isLegacy = false, res: Response 
         if (connection === 'open') {
             retries.delete(sessionId)
             const session = getSession(sessionId)
-            session.sendPresenceUpdate('unavailable')
+            session?.sendPresenceUpdate('unavailable')
         }
 
         if (connection === 'close') {
@@ -253,7 +256,7 @@ const sendMessage = async (session: SessionMap, receiver: string, message: AnyMe
     try {
         await delay(1000)
 
-        return session.sendMessage(receiver, message)
+        return session.sendMessage(receiver, message).then(session.handler?.addMessage);
     } catch {
         return Promise.reject(null) // eslint-disable-line prefer-promise-reject-errors
     }
